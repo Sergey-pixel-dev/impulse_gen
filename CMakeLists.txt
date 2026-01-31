@@ -45,6 +45,10 @@ target_link_directories(${CMAKE_PROJECT_NAME} PRIVATE
 # Add sources to executable
 target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     # Add user sources here
+    ${CMAKE_SOURCE_DIR}/Core/Src/eeprom.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/fonts.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/st7789.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/i2c.c
 )
 
 # Add include paths
