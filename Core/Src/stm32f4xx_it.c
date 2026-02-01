@@ -22,6 +22,7 @@
 #include "main.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32f4xx_hal.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,7 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
+#define DEBOUNCE_MS 250
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -41,7 +42,12 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
-
+static uint8_t enc_s1_flag = 0;
+static uint8_t enc_s2_flag = 0;
+static uint32_t last_enc_tick = 0;
+static uint32_t last_btn_enc_tick = 0;
+static uint32_t last_btn_param_tick = 0;
+static uint32_t last_btn_rec_tick = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -188,7 +194,7 @@ void SysTick_Handler(void) {
 void UART5_IRQHandler(void) {
   if (UART5->SR & USART_SR_RXNE) {
     uint8_t i = 0;
-    RxBuffer[i++] = UART4->DR;
+    RxBuffer[i++] = UART5->DR;
     while (!(UART5->SR & USART_SR_IDLE)) {
       if (UART5->SR & USART_SR_RXNE) {
         if (i < RX_BUFFER_SIZE) {
@@ -196,11 +202,75 @@ void UART5_IRQHandler(void) {
         }
       }
     }
-    UART5->DR;
-    if (i >= 4 && RxBuffer[0] == 0xAA && RxBuffer[1] == 0x55 &&
-        RxBuffer[i - 2] == 0x55 && RxBuffer[i - 1] == 0xAA) {
-      packet_ready = 1;
+    (void)UART5->SR;
+    (void)UART5->DR;
+    if (i >= 6 && RxBuffer[0] == 0xAA && RxBuffer[1] == 0x55) {
+      uint8_t expected_len = RxBuffer[2];
+      if (expected_len <= i && expected_len >= 6 &&
+          RxBuffer[expected_len - 2] == 0x55 &&
+          RxBuffer[expected_len - 1] == 0xAA) {
+        packet_len = expected_len;
+        packet_ready = 1;
+      }
     }
   }
+}
+
+void EXTI0_IRQHandler(void) {
+  EXTI->PR = EXTI_PR_PR0;
+  uint32_t now = HAL_GetTick();
+  if (now - last_enc_tick < DEBOUNCE_MS)
+    return;
+  if (enc_s2_flag) {
+    encoder_direction = 2;
+    enc_s1_flag = 0;
+    enc_s2_flag = 0;
+    last_enc_tick = now;
+  } else {
+    enc_s1_flag = 1;
+  }
+}
+
+void EXTI1_IRQHandler(void) {
+  EXTI->PR = EXTI_PR_PR1;
+  uint32_t now = HAL_GetTick();
+  if (now - last_enc_tick < DEBOUNCE_MS)
+    return;
+
+  if (enc_s1_flag) {
+    encoder_direction = 1;
+    enc_s1_flag = 0;
+    enc_s2_flag = 0;
+    last_enc_tick = now;
+  } else {
+    enc_s2_flag = 1;
+  }
+}
+
+void EXTI2_IRQHandler(void) {
+  EXTI->PR = EXTI_PR_PR2;
+  uint32_t now = HAL_GetTick();
+  if (now - last_btn_enc_tick < DEBOUNCE_MS)
+    return;
+  last_btn_enc_tick = now;
+  btn_encoder_pressed = 1;
+}
+
+void EXTI3_IRQHandler(void) {
+  EXTI->PR = EXTI_PR_PR3;
+  uint32_t now = HAL_GetTick();
+  if (now - last_btn_param_tick < DEBOUNCE_MS)
+    return;
+  last_btn_param_tick = now;
+  btn_param_pressed = 1;
+}
+
+void EXTI4_IRQHandler(void) {
+  EXTI->PR = EXTI_PR_PR4;
+  uint32_t now = HAL_GetTick();
+  if (now - last_btn_rec_tick < DEBOUNCE_MS)
+    return;
+  last_btn_rec_tick = now;
+  btn_record_pressed = 1;
 }
 /* USER CODE END 1 */

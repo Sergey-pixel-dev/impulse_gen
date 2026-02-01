@@ -11,8 +11,7 @@
 #include "stm32f4xx_hal.h"
 
 /* Declarations and definitions ----------------------------------------------*/
-#define ST7789_SPI_PORT hspi1
-extern SPI_HandleTypeDef ST7789_SPI_PORT;
+/* SPI1 used via direct register access (spi.h) */
 
 /**
  * Цвета в формате RGB565
@@ -39,7 +38,6 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 #define LGRAY 0xC618
 #define LGRAYBLUE 0xA651
 #define LBBLUE 0x2B12
-#define DARKBLUE 0x000F
 
 /* Регистры и коды команд */
 #define ST7789_NOP 0x00
@@ -85,8 +83,8 @@ extern SPI_HandleTypeDef ST7789_SPI_PORT;
 #define ST7789_MADCTL_RGB 0x00 // RGB Order
 
 /* Размеры дисплея */
-#define ST7789_WIDTH 240
-#define ST7789_HEIGHT 320
+#define ST7789_WIDTH 128  // 240
+#define ST7789_HEIGHT 160 // 320
 
 /* Значения смещения для позиционирования */
 #define X_SHIFT 0

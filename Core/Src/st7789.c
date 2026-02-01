@@ -32,10 +32,7 @@ static void ST7789_WaitLastData(void) {
 static void ST7789_SendCommand(uint8_t cmd) {
   ST7789_Select();
   HAL_GPIO_WritePin(ST7789_DC_PORT, ST7789_DC_PIN, GPIO_PIN_RESET);
-  // ST7789_SendByte(cmd); // это почему то не работает
-  // ST7789_WaitLastData();
-  HAL_SPI_Transmit(&ST7789_SPI_PORT, &cmd, sizeof(cmd),
-                   HAL_MAX_DELAY); // а это работает
+  ST7789_SendByte(cmd);
   ST7789_WaitLastData();
   ST7789_UnSelect();
 }
@@ -114,69 +111,102 @@ void ST7789_SetRotation(uint8_t m) {
 }
 
 /*----------------------------------------------------------------------------*/
-void ST7789_Init(void) {
-  ST7789_RST_Clr();
+void ST7789_Init() {
+  SPI1->CR1 |= SPI_CR1_SPE;
+  HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_RESET);
+
+  HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_SET);
   HAL_Delay(5);
-  ST7789_RST_Set();
+  HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_RESET);
+  HAL_Delay(5);
+  HAL_GPIO_WritePin(ST7789_RST_PORT, ST7789_RST_PIN, GPIO_PIN_SET);
+  HAL_Delay(5);
+
+  ST7789_SendCommand(0x01);
   HAL_Delay(150);
+  ST7789_SendCommand(0x11);
+  HAL_Delay(500);
+  ST7789_SendCommand(0xB1);
+  ST7789_SendData(0x01);
+  ST7789_SendData(0x2C);
+  ST7789_SendData(0x2D);
+  ST7789_SendCommand(0xB2);
+  ST7789_SendData(0x01);
+  ST7789_SendData(0x2C);
+  ST7789_SendData(0x2D);
+  ST7789_SendCommand(0xB3);
+  ST7789_SendData(0x01);
+  ST7789_SendData(0x2C);
+  ST7789_SendData(0x2D);
+  ST7789_SendData(0x01);
+  ST7789_SendData(0x2C);
+  ST7789_SendData(0x2D);
+  ST7789_SendCommand(0xB4);
+  ST7789_SendData(0x07);
+  ST7789_SendCommand(0xC0);
+  ST7789_SendData(0xA2);
+  ST7789_SendData(0x02);
+  ST7789_SendData(0x84);
+  ST7789_SendCommand(0xC1);
+  ST7789_SendData(0xC5);
+  ST7789_SendCommand(0xC2);
+  ST7789_SendData(0x0A);
+  ST7789_SendData(0x00);
+  ST7789_SendCommand(0xC3);
+  ST7789_SendData(0x8A);
+  ST7789_SendData(0x2A);
+  ST7789_SendCommand(0xC4);
+  ST7789_SendData(0x8A);
+  ST7789_SendData(0xEE);
+  ST7789_SendCommand(0xC5);
+  ST7789_SendData(0x0E);
+  ST7789_SendCommand(0x20);
+  ST7789_SendCommand(0x36);
+  ST7789_SendData(0xC0);
+  ST7789_SendCommand(0x3A);
+  ST7789_SendData(0x05);
+  ST7789_SendCommand(0xE0);
+  ST7789_SendData(0x02);
+  ST7789_SendData(0x1c);
+  ST7789_SendData(0x07);
+  ST7789_SendData(0x12);
+  ST7789_SendData(0x37);
+  ST7789_SendData(0x32);
+  ST7789_SendData(0x29);
+  ST7789_SendData(0x2d);
+  ST7789_SendData(0x29);
+  ST7789_SendData(0x25);
+  ST7789_SendData(0x2B);
+  ST7789_SendData(0x39);
+  ST7789_SendData(0x00);
+  ST7789_SendData(0x01);
+  ST7789_SendData(0x03);
+  ST7789_SendData(0x10);
+  ST7789_SendCommand(0xE1);
+  ST7789_SendData(0x03);
+  ST7789_SendData(0x1d);
+  ST7789_SendData(0x07);
+  ST7789_SendData(0x06);
+  ST7789_SendData(0x2E);
+  ST7789_SendData(0x2C);
+  ST7789_SendData(0x29);
+  ST7789_SendData(0x2D);
+  ST7789_SendData(0x2E);
+  ST7789_SendData(0x2E);
+  ST7789_SendData(0x37);
+  ST7789_SendData(0x3F);
+  ST7789_SendData(0x00);
+  ST7789_SendData(0x00);
+  ST7789_SendData(0x02);
+  ST7789_SendData(0x10);
+  ST7789_SendCommand(ST7789_MADCTL); // меняем вывод цветов с GBR на RGB
+  ST7789_SendData(0b00001000);
+  ST7789_SendCommand(ST7789_NORON);
+  HAL_Delay(10);
+  ST7789_SendCommand(ST7789_DISPON);
+  HAL_Delay(100);
 
-  ST7789_SendCommand(ST7789_COLMOD); // Set color mode
-  ST7789_SendData(ST7789_COLOR_MODE_16bit);
-
-  ST7789_SendCommand(0xB2); // Porch control
-  {
-    uint8_t data[] = {0x0C, 0x0C, 0x00, 0x33, 0x33};
-    ST7789_SendDataMultiple(data, sizeof(data));
-  }
-
-  ST7789_SetRotation(0); // MADCTL (Display Rotation)
-
-  /* Internal LCD Voltage generator settings */
-  ST7789_SendCommand(0XB7); // Gate Control
-  ST7789_SendData(0x35);    // Default value
-
-  ST7789_SendCommand(0xBB); // VCOM setting
-  ST7789_SendData(0x19);    // 0.725v (default 0.75v for 0x20)
-
-  ST7789_SendCommand(0xC0); // LCMCTRL
-  ST7789_SendData(0x2C);    // Default value
-
-  ST7789_SendCommand(0xC2); // VDV and VRH command Enable
-  ST7789_SendData(0x01);    // Default value
-
-  ST7789_SendCommand(0xC3); // VRH set
-  ST7789_SendData(0x12);    // +-4.45v (default +-4.1v for 0x0B)
-
-  ST7789_SendCommand(0xC4); // VDV set
-  ST7789_SendData(0x20);    // Default value
-
-  ST7789_SendCommand(0xC6); // Frame rate control in normal mode
-  ST7789_SendData(0x0F);    // Default value (60HZ)
-
-  ST7789_SendCommand(0xD0); // Power control
-  ST7789_SendData(0xA4);    // Default value
-  ST7789_SendData(0xA1);    // Default value
-
-  ST7789_SendCommand(0xE0); // Positive Voltage Gamma Control
-  {
-    uint8_t data[] = {0xD0, 0x04, 0x0D, 0x11, 0x13, 0x2B, 0x3F,
-                      0x54, 0x4C, 0x18, 0x0D, 0x0B, 0x1F, 0x23};
-    ST7789_SendDataMultiple(data, sizeof(data));
-  }
-
-  ST7789_SendCommand(0xE1); // Negative Voltage Gamma Control
-  {
-    uint8_t data[] = {0xD0, 0x04, 0x0C, 0x11, 0x13, 0x2C, 0x3F,
-                      0x44, 0x51, 0x2F, 0x1F, 0x1F, 0x20, 0x23};
-    ST7789_SendDataMultiple(data, sizeof(data));
-  }
-
-  ST7789_SendCommand(ST7789_SLPOUT); // Exit Sleep
-  HAL_Delay(150);
-
-  ST7789_SendCommand(ST7789_NORON);  // Normal display on
-  ST7789_SendCommand(ST7789_DISPON); // Display on
-  HAL_Delay(50);
+  HAL_GPIO_WritePin(ST7789_CS_PORT, ST7789_CS_PIN, GPIO_PIN_SET);
 }
 
 /*----------------------------------------------------------------------------*/
@@ -232,29 +262,23 @@ void ST7789_PrintSymbol(uint16_t cStart, uint16_t rStart, uint8_t sb,
   if (font_size == 0)
     font_size = CurrentFontSize;
 
-  // Проверка на поддерживаемый символ
   uint8_t char_index = GetFontCharIndex(sb);
   if (char_index == 0xFF)
     return;
 
-  // Получаем ширину символа
   uint8_t char_width = GetFontCharWidth(sb);
 
-  // Получаем смещение символа в массиве данных шрифта
   uint16_t data_offset = FONT_CHAR_INFO[char_index][1];
 
-  // Использование текущей позиции, если запрошено
   if (cStart == 0xFF && rStart == 0xFF) {
     cStart = CurrentCol;
     rStart = CurrentRow;
   }
 
-  // Установка окна для символа
   uint16_t font_height = ST7789_FONT_SIZE * font_size;
   ST7789_SetAddressWindow(cStart, rStart, cStart + (char_width * font_size) - 1,
                           rStart + font_height - 1);
 
-  // Подготовка цветовых байтов
   uint8_t color_high = (color >> 8) & 0xFF;
   uint8_t color_low = color & 0xFF;
   uint8_t bg_color_high = (bg_color >> 8) & 0xFF;

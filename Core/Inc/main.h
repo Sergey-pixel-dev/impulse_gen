@@ -54,6 +54,12 @@ void Error_Handler(void);
 /* USER CODE BEGIN EFP */
 extern uint8_t RxBuffer[RX_BUFFER_SIZE];
 extern uint8_t packet_ready;
+extern uint8_t packet_len;
+
+extern volatile uint8_t encoder_direction; // 0=none, 1=increment, 2=decrement
+extern volatile uint8_t btn_encoder_pressed;
+extern volatile uint8_t btn_record_pressed;
+extern volatile uint8_t btn_param_pressed;
 
 /* USER CODE END EFP */
 

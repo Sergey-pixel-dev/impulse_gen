@@ -49,6 +49,10 @@ target_sources(${CMAKE_PROJECT_NAME} PRIVATE
     ${CMAKE_SOURCE_DIR}/Core/Src/fonts.c
     ${CMAKE_SOURCE_DIR}/Core/Src/st7789.c
     ${CMAKE_SOURCE_DIR}/Core/Src/i2c.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/spi.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/signal_gen.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/display.c
+    ${CMAKE_SOURCE_DIR}/Core/Src/protocol.c
 )
 
 # Add include paths
@@ -67,6 +71,6 @@ list(REMOVE_ITEM CMAKE_C_IMPLICIT_LINK_LIBRARIES ob)
 # Add linked libraries
 target_link_libraries(${CMAKE_PROJECT_NAME}
     stm32cubemx
-
+    m
     # Add user defined libraries
 )
